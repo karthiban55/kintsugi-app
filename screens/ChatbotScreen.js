@@ -5,7 +5,7 @@ import { GiftedChat, Bubble } from 'react-native-gifted-chat';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StyleSheet } from 'react-native';
 
-const API_URL = 'https://kintsugi-d5fgoci1r-karthibans-projects-ade1358f.vercel.app'; 
+const API_URL = 'https://kintsugi-iampt2xff-karthibans-projects-ade1358f.vercel.app'; 
 
 const BOT_USER = {
   _id: 2,

@@ -12,7 +12,7 @@ export default async function handler(request, response) {
 
     // Get the API key securely from the Vercel environment variables
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro-latest' });
 
     const chat = model.startChat({
         history: history, // Pass the previous conversation history
