@@ -2,11 +2,10 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { GiftedChat, Bubble } from 'react-native-gifted-chat';
-import { SafeAreaView, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet } from 'react-native';
 
-// --- IMPORTANT: PASTE YOUR VERCEL URL HERE ---
-const API_URL = 'https://kintsugi-d5fgoci1r-karthibans-projects-ade1358f.vercel.app/api/chat'; 
-// Make sure it starts with https:// and does NOT end with a slash /
+const API_URL = 'https://kintsugi-d5fgoci1r-karthibans-projects-ade1358f.vercel.app'; 
 
 const BOT_USER = {
   _id: 2,
@@ -29,21 +28,17 @@ const ChatbotScreen = () => {
   }, []);
 
   const onSend = useCallback((messages = []) => {
-    // 1. Add the user's message to the chat UI immediately
     setMessages(previousMessages =>
       GiftedChat.append(previousMessages, messages),
     );
 
     const userMessage = messages[0].text;
-
-    // 2. Prepare the conversation history for the AI
-    // We format it into the { role, parts } structure that the Gemini API expects
     const history = messages.slice(1).reverse().map(msg => ({
         role: msg.user._id === 1 ? 'user' : 'model',
         parts: [{ text: msg.text }],
     }));
 
-    // 3. Send the message and history to our secure Vercel backend
+    // --- MODIFIED FETCH LOGIC TO CAPTURE THE ERROR ---
     fetch(`${API_URL}/api/chat`, {
       method: 'POST',
       headers: {
@@ -51,8 +46,16 @@ const ChatbotScreen = () => {
       },
       body: JSON.stringify({ message: userMessage, history: history }),
     })
-      .then(response => response.json())
-      .then(data => {
+      .then(response => response.text()) // 1. Get the raw text response first
+      .then(text => {
+        // 2. Log the raw text to the console for us to see
+        console.log("--- RAW SERVER RESPONSE ---");
+        console.log(text);
+        console.log("---------------------------");
+
+        // 3. Now, try to parse it as JSON
+        const data = JSON.parse(text);
+
         if (data.reply) {
           const botMessage = {
             _id: new Date().getTime() + 1,
@@ -60,27 +63,36 @@ const ChatbotScreen = () => {
             createdAt: new Date(),
             user: BOT_USER,
           };
-          // 4. Add the AI's response to the chat UI
           setMessages(previousMessages =>
             GiftedChat.append(previousMessages, [botMessage]),
           );
+        } else {
+          throw new Error(data.error || 'Invalid response from AI');
         }
       })
       .catch(error => {
         console.error("Failed to fetch AI response:", error);
+        const errorMessage = {
+            _id: new Date().getTime() + 1,
+            text: "Sorry, I'm having trouble connecting. Please check the debug console for details.",
+            createdAt: new Date(),
+            user: BOT_USER,
+        };
+        setMessages(previousMessages =>
+            GiftedChat.append(previousMessages, [errorMessage]),
+        );
       });
   }, []);
 
-  // Custom styling for the message bubbles
   const renderBubble = (props) => {
     return (
       <Bubble
         {...props}
         wrapperStyle={{
-          right: { // User's bubble
+          right: {
             backgroundColor: '#007AFF',
           },
-          left: { // Bot's bubble
+          left: {
             backgroundColor: '#E5E5EA',
           },
         }}
